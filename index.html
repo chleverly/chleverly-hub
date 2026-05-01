@@ -15,7 +15,6 @@
       background-color: #1a73e8; color: white; border: none; padding: 15px 0;
       width: 240px; border-radius: 8px; cursor: pointer; font-size: 22px; font-weight: bold;
     }
-    #buy-btn:hover { background-color: #1557b0; }
     .price-loading {
       width: 200px; height: 38px; border-radius: 4px;
       background: linear-gradient(110deg, #ececec 8%, #f5f5f5 18%, #ececec 33%);
@@ -25,49 +24,47 @@
   </style>
 </head>
 <body>
-
-<div id="container">
-  <div id="price-wrapper">
-    <div id="price-display" class="price-text"></div>
-    <div id="price-skeleton" class="price-loading"></div>
+  <div id="container">
+    <div id="price-wrapper">
+      <div id="price-display" class="price-text"></div>
+      <div id="price-skeleton" class="price-loading"></div>
+    </div>
+    <button id="buy-btn" onclick="openInquiry()">Inquire & Buy</button>
   </div>
-  <button id="buy-btn" onclick="redirectToForm()">Inquire & Buy</button>
-</div>
 
-<script>
-  // UPDATE THIS URL AFTER EVERY NEW DEPLOYMENT
-  const MASTER_URL = "https://script.google.com/macros/s/AKfycbz67B-2r5iE67ZSI2RAwK6w4kECxBn9Hk7JC3B7LPqCmAiRpVN3_rJtj2bemokH2k6Q5Q/exec";
+  <script>
+    const MASTER_URL = "https://script.google.com/macros/s/AKfycbwevn9IWrOfg6oLLnC-yLY6knGxSHW1sFVmGv7dZwhJaPVQ6AZSuHNGiHjWcG6sYjruUA/exec";
+    
+    // Reads SKU from the URL parameter (e.g., ?sku=ABC)
+    const urlParams = new URLSearchParams(window.location.search);
+    const GLOBAL_SKU = urlParams.get('sku');
 
-  const urlParams = new URLSearchParams(window.location.search);
-  const GLOBAL_SKU = urlParams.get('sku');
+    async function loadPrice() {
+      const display = document.getElementById('price-display');
+      const skeleton = document.getElementById('price-skeleton');
+      
+      if (!GLOBAL_SKU) {
+        skeleton.style.display = 'none';
+        display.innerText = "SKU Missing";
+        return;
+      }
 
-  async function loadPrice() {
-    if (!GLOBAL_SKU) {
-      document.getElementById('price-skeleton').style.display = 'none';
-      document.getElementById('price-display').innerText = "SKU Missing";
-      return;
+      try {
+        const response = await fetch(`${MASTER_URL}?sku=${encodeURIComponent(GLOBAL_SKU)}`);
+        const price = await response.text();
+        skeleton.style.display = 'none';
+        display.innerText = price + " (inc. GST)";
+      } catch (err) {
+        skeleton.style.display = 'none';
+        display.innerText = "Contact for Price (inc. GST)";
+      }
     }
-    const display = document.getElementById('price-display');
-    const skeleton = document.getElementById('price-skeleton');
-    try {
-      const response = await fetch(`${MASTER_URL}?sku=${encodeURIComponent(GLOBAL_SKU)}`);
-      const price = await response.text();
-      skeleton.style.display = 'none';
-      display.innerText = price + " (inc. GST)";
-    } catch (err) {
-      skeleton.style.display = 'none';
-      display.innerText = "Contact for Price (inc. GST)";
+
+    function openInquiry() {
+      window.open(`${MASTER_URL}?sku=${encodeURIComponent(GLOBAL_SKU)}&mode=form`, '_blank');
     }
-  }
 
-  function redirectToForm() {
-    if (!GLOBAL_SKU) return alert("SKU missing.");
-    // Cache-busting timestamp ensures a fresh form load
-    const fullInquiryUrl = `${MASTER_URL}?sku=${encodeURIComponent(GLOBAL_SKU)}&mode=form&t=${Date.now()}`;
-    window.open(fullInquiryUrl, '_blank');
-  }
-
-  loadPrice();
-</script>
+    loadPrice();
+  </script>
 </body>
 </html>
