@@ -1,14 +1,15 @@
 <!-- 
   Chleverly HTML Master
-  Purpose: Dynamic pricing and inquiry widget hub for Google Sites.
+  Purpose: Dynamic pricing hub for Google Sites. Opens inquiry in new tab.
   Reference: ChleverlyPricingMaster.gs
+  Version: 2.0 - New Tab Redirection
 -->
 <!DOCTYPE html>
 <html>
 <head>
   <link rel="preconnect" href="https://script.google.com">
   <style>
-    body { margin: 0; font-family: 'Arial', sans-serif; overflow: hidden; }
+    body { margin: 0; font-family: 'Arial', sans-serif; overflow: hidden; background: transparent; }
     #container { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 10px; }
     
     /* Price Styling */
@@ -32,7 +33,9 @@
       font-size: 22px;
       font-weight: bold;
       font-family: Arial, Helvetica, sans-serif;
+      transition: background-color 0.2s;
     }
+    #buy-btn:hover { background-color: #1557b0; }
 
     /* Skeleton Loader */
     .price-loading {
@@ -42,10 +45,6 @@
       animation: 1.5s shine linear infinite; margin-bottom: 20px;
     }
     @keyframes shine { to { background-position-x: -200%; } }
-
-    #form-box { display: none; flex-direction: column; gap: 12px; width: 280px; margin-top: 15px; }
-    #form-box input { padding: 12px; border: 1px solid #ccc; border-radius: 4px; }
-    #submit-btn { background-color: #28a745; color: white; border: none; padding: 12px; border-radius: 4px; font-weight: bold; cursor: pointer; }
   </style>
 </head>
 <body>
@@ -55,20 +54,12 @@
     <div id="price-display" class="price-text"></div>
     <div id="price-skeleton" class="price-loading"></div>
   </div>
-  <button id="buy-btn" onclick="openForm()">Inquire & Buy</button>
-  <div id="form-box">
-    <input type="text" id="hp-field" style="display:none !important" tabindex="-1">
-    <input type="text" id="u-name" placeholder="Full Name" required>
-    <input type="email" id="u-email" placeholder="Email Address" required>
-    <input type="tel" id="u-phone" placeholder="Mobile Number" required>
-    <button id="submit-btn" onclick="submitData()">Send Inquiry</button>
-  </div>
+  <button id="buy-btn" onclick="redirectToForm()">Inquire & Buy</button>
 </div>
 
 <script>
   const MASTER_URL = "https://script.google.com/macros/s/AKfycbw8LxK8aArs0N6FC75EUsCK8xQU7uvCC_JLlGB4NUYOU8835hkz73PuzwhgPaff8Sbs5g/exec";
 
-  // DYNAMIC SKU PICKUP: Reads ?sku=XXXX from the URL
   const urlParams = new URLSearchParams(window.location.search);
   const GLOBAL_SKU = urlParams.get('sku');
 
@@ -99,25 +90,10 @@
     }
   }
 
-  function openForm() {
-    document.getElementById('buy-btn').style.display = 'none';
-    document.getElementById('form-box').style.display = 'flex';
-  }
-
-  function submitData() {
-    const btn = document.getElementById('submit-btn');
-    const payload = {
-      sku: GLOBAL_SKU,
-      name: document.getElementById('u-name').value,
-      email: document.getElementById('u-email').value,
-      phone: document.getElementById('u-phone').value,
-      honeypot: document.getElementById('hp-field').value
-    };
-    if(!payload.name || !payload.email || !payload.phone) return alert("Please fill all fields");
-    btn.innerText = "Processing...";
-    btn.disabled = true;
-    fetch(MASTER_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(payload) })
-      .then(() => { document.getElementById('form-box').innerHTML = "<p style='color:#28a745; font-weight:bold;'>Inquiry sent!</p>"; });
+  function redirectToForm() {
+    // Opens the Google Apps Script form in a new tab with the SKU pre-loaded
+    const fullInquiryUrl = `${MASTER_URL}?sku=${encodeURIComponent(GLOBAL_SKU)}&mode=form`;
+    window.open(fullInquiryUrl, '_blank');
   }
 
   loadPrice();
