@@ -2,50 +2,102 @@
   Chleverly HTML Master
   Purpose: Dynamic pricing hub for Google Sites. Opens inquiry in new tab.
   Reference: ChleverlyPricingMaster.gs
-  Version: 3.0 - New Tab Redirection
+  Version: 2.1 - Updated Web App URL
 -->
 <!DOCTYPE html>
 <html>
 <head>
+  <link rel="preconnect" href="https://script.google.com">
   <style>
     body { margin: 0; font-family: 'Arial', sans-serif; overflow: hidden; background: transparent; }
     #container { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 10px; }
-    .price-text { color: #000; margin-bottom: 20px; font-size: 22px; font-weight: 800; min-height: 26px; }
-    #buy-btn { background-color: #1a73e8; color: white; border: none; padding: 15px 0; width: 240px; border-radius: 8px; cursor: pointer; font-size: 22px; font-weight: bold; }
+    
+    /* Price Styling */
+    .price-text {
+      color: #000;
+      margin-bottom: 20px;
+      font-size: 22px; 
+      font-weight: 800;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    /* Button Styling */
+    #buy-btn {
+      background-color: #1a73e8;
+      color: white;
+      border: none;
+      padding: 15px 0;
+      width: 240px; 
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 22px;
+      font-weight: bold;
+      font-family: Arial, Helvetica, sans-serif;
+      transition: background-color 0.2s;
+    }
+    #buy-btn:hover { background-color: #1557b0; }
+
+    /* Skeleton Loader */
+    .price-loading {
+      width: 200px; height: 38px;
+      background: linear-gradient(110deg, #ececec 8%, #f5f5f5 18%, #ececec 33%);
+      border-radius: 4px; background-size: 200% 100%;
+      animation: 1.5s shine linear infinite; margin-bottom: 20px;
+    }
+    @keyframes shine { to { background-position-x: -200%; } }
   </style>
 </head>
 <body>
-  <div id="container">
-    <div id="price-display" class="price-text">Loading price...</div>
-    <button id="buy-btn" onclick="redirectToForm()">Inquire & Buy</button>
+
+<div id="container">
+  <div id="price-wrapper">
+    <div id="price-display" class="price-text"></div>
+    <div id="price-skeleton" class="price-loading"></div>
   </div>
+  <button id="buy-btn" onclick="redirectToForm()">Inquire & Buy</button>
+</div>
 
-  <script>
-    // Ensure this URL is the "CLEAN" version without /u/7/
-    const MASTER_URL = "https://script.google.com/macros/s/AKfycbw8LxK8aArs0N6FC75EUsCK8xQU7uvCC_JLlGB4NUYOU8835hkz73PuzwhgPaff8Sbs5g/exec";
-    const urlParams = new URLSearchParams(window.location.search);
-    const GLOBAL_SKU = urlParams.get('sku');
+<script>
+  // Updated URL provided by user
+  const MASTER_URL = "https://script.google.com/macros/s/AKfycbz67B-2r5iE67ZSI2RAwK6w4kECxBn9Hk7JC3B7LPqCmAiRpVN3_rJtj2bemokH2k6Q5Q/exec";
 
-    async function loadPrice() {
-      if (!GLOBAL_SKU) {
-        document.getElementById('price-display').innerText = "SKU Missing";
-        return;
-      }
+  const urlParams = new URLSearchParams(window.location.search);
+  const GLOBAL_SKU = urlParams.get('sku');
+
+  async function fetchWithRetry(url, retries = 2) {
+    for (let i = 0; i < retries; i++) {
       try {
-        const response = await fetch(`${MASTER_URL}?sku=${encodeURIComponent(GLOBAL_SKU)}`);
-        const price = await response.text();
-        document.getElementById('price-display').innerText = price + " (inc. GST)";
-      } catch (err) {
-        document.getElementById('price-display').innerText = "Contact for Price (inc. GST)";
-      }
+        const response = await fetch(url);
+        if (response.ok) return await response.text();
+      } catch (err) { if (i === retries - 1) throw err; }
     }
+  }
 
-    function redirectToForm() {
-      const fullInquiryUrl = `${MASTER_URL}?sku=${encodeURIComponent(GLOBAL_SKU)}&mode=form`;
-      window.open(fullInquiryUrl, '_blank');
+  async function loadPrice() {
+    if (!GLOBAL_SKU) {
+      document.getElementById('price-skeleton').style.display = 'none';
+      document.getElementById('price-display').innerText = "SKU Missing";
+      return;
     }
+    const display = document.getElementById('price-display');
+    const skeleton = document.getElementById('price-skeleton');
+    try {
+      const price = await fetchWithRetry(`${MASTER_URL}?sku=${encodeURIComponent(GLOBAL_SKU)}`);
+      skeleton.style.display = 'none';
+      display.innerText = price + " (inc. GST)";
+    } catch (err) {
+      skeleton.style.display = 'none';
+      display.innerText = "Contact for Price (inc. GST)";
+    }
+  }
 
-    loadPrice();
-  </script>
+  function redirectToForm() {
+    // Opens the Google Apps Script form in a new tab with the SKU pre-loaded
+    const fullInquiryUrl = `${MASTER_URL}?sku=${encodeURIComponent(GLOBAL_SKU)}&mode=form`;
+    window.open(fullInquiryUrl, '_blank');
+  }
+
+  loadPrice();
+</script>
 </body>
 </html>
