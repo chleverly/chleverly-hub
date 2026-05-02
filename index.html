@@ -1,7 +1,8 @@
 <!-- 
   PROJECT: Chleverly Product Pricing & Inquiry System
   FILE: Index.html
-  VERSION: 1.5
+  VERSION: 3.2
+  DATE: 02-May-2026
   
   DESCRIPTION:
   This file serves as the User Interface (UI) for Chleverly's product pages.
@@ -10,7 +11,8 @@
   3. It reveals a hidden inquiry form upon clicking the button.
   4. It sends user-inputted data (Name, Email, Phone) back to PricingMaster.gs to trigger supplier emails.
   5. It opens the Inquiry Form in a new window.
-
+  6. Mobile-Stable / 235px Optimized
+  
   DEVELOPER NOTE:
   - Elements are centralized using CSS Flexbox.
   - Aesthetics (fonts, sizes, colors) can be modified in the <style> section below.
@@ -19,98 +21,105 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <base target="_blank"> <!-- Changed to _blank to support opening new tabs -->
+    <base target="_blank">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <style>
-      .price-display { 
-        font-size: 22px;                   /* ADJUST FONT SIZE HERE */
-        font-family: 'Arial', sans-serif;  /* ADJUST FONT TYPE HERE */
-        font-weight: bold; 
-        color: #333; 
-        margin-bottom: 5px; 
-      }
-      .btn-inquiry { 
-        font-size: 22px;                   /* ADJUST BUTTON FONT SIZE HERE */
-        font-family: 'Arial', sans-serif;  /* ADJUST BUTTON FONT TYPE HERE */
-        font-weight: bold;                 /* ADJUST BUTTON FONT WEIGHT HERE (600) */
-        color: #FFF;                       /* ADJUST BUTTON FONT COLOR HERE */
-        /* 5c. BUTTON SIZE (Padding) */
-        padding: 12px 40px;                /* 12px = Height, 40px = Width */
-      }
-      
-      body { 
-        display: flex; flex-direction: column; align-items: center; 
-        justify-content: flex-start; min-height: 100vh; padding-top: 15px; 
+      html, body {
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        /* Absolute suppression of scrollbars for mobile stability */
+        overflow: hidden !important; 
         background-color: transparent; 
       }
 
+      #main-anchor {
+        height: 100vh;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        /* Vertically centers the price/button within your 235px box */
+        justify-content: center; 
+        padding: 0 !important;
+      }
+
+      .price-display { 
+        font-size: 22px; 
+        font-family: 'Arial', sans-serif;
+        font-weight: bold; 
+        color: #333; 
+        margin: 0 0 10px 0 !important; 
+        line-height: 1.1; 
+      }
+      
+      .btn-inquiry { 
+        font-size: 22px; 
+        font-family: 'Arial', sans-serif;
+        font-weight: bold;
+        color: #FFF;
+        /* Professional button padding retained */
+        padding: 10px 40px !important; 
+        border-radius: 6px;
+        margin: 0 !important; 
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      }
+
+      /* Inquiry Form Styling */
       #formSection { 
         width: 95%; max-width: 600px; margin: 20px auto; padding: 30px; 
         border: 1px solid #dee2e6; border-radius: 8px; background: #fff; 
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
       }
     </style>
   </head>
   <body>
 
     <? if (product) { ?>
-      
       <? if (mode === 'form') { ?>
         <div id="formSection">
           <h4 class="mb-1 text-center"><strong>Product Inquiry</strong></h4>
-          <!-- ADJUST PRODUCT FONT SIZE HERE (h5 /h5) -->
-          <p class="text-center mb-1">Product: <strong><?= product.name ?></strong></p>
-          <p class="text-center mb-1">Color: <strong><?= product.color ?></strong></p>
-          <p class="text-muted text-center small mb-4">SKU: <strong><?= product.sku ?></strong></p>
-          
+          <h5 class="text-center mb-1"><strong>Product:</strong> <?= product.name ?></h5>
           <div class="mb-3">
             <label class="form-label">Full Name</label>
-            <input type="text" id="custName" class="form-control" placeholder="Enter your name">
+            <input type="text" id="custName" class="form-control">
           </div>
           <div class="mb-3">
             <label class="form-label">Email Address</label>
-            <input type="email" id="custEmail" class="form-control" placeholder="name@example.com">
+            <input type="email" id="custEmail" class="form-control">
           </div>
           <div class="mb-3">
             <label class="form-label">Mobile Number</label>
-            <input type="text" id="custPhone" class="form-control" placeholder="e.g. +65 1234 5678">
+            <input type="text" id="custPhone" class="form-control">
           </div>
-          
           <button id="submitBtn" class="btn btn-primary w-100 py-2" onclick="submitInquiry()">Send Inquiry</button>
           <div id="statusMsg" class="mt-3 text-center small"></div>
         </div>
 
       <? } else { ?>
-        <div class="price-display"><?= product.price ?> (inc. GST)</div>
-        <button class="btn btn-primary btn-inquiry" onclick="openFormTab()">Inquire & Buy</button>
+        <div id="main-anchor">
+          <div class="price-display"><?= product.price ?> (inc. GST)</div>
+          <button class="btn btn-primary btn-inquiry" onclick="openFormTab()">Inquire & Buy</button>
+        </div>
       <? } ?>
 
       <script>
         function openFormTab() {
           var baseUrl = '<?= scriptUrl ?>';
           var sku = '<?= product.sku ?>';
-          var finalUrl = baseUrl + "?sku=" + sku + "&mode=form";
-          
-          // Using _blank to trigger a new tab properly from the iframe
-          window.open(finalUrl, '_blank');
+          window.open(baseUrl + "?sku=" + sku + "&mode=form", '_blank');
         }
 
         function submitInquiry() {
           const btn = document.getElementById('submitBtn');
           btn.disabled = true; btn.innerHTML = "Sending...";
-          
           const formData = {
             sku: '<?= product.sku ?>',
             productName: '<?= product.name ?>',
-            color: '<?= product.color ?>',
-            price: '<?= product.price ?>',
-            gift: '<?= product.gift ?>',
-            supplierEmail: '<?= product.supplier ?>',
             custName: document.getElementById('custName').value,
             custEmail: document.getElementById('custEmail').value,
             custPhone: document.getElementById('custPhone').value
           };
-
           google.script.run
             .withSuccessHandler(() => { 
                btn.innerHTML = "Sent!"; 
