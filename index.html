@@ -1,17 +1,20 @@
 <!-- 
   PROJECT: Chleverly Product Pricing & Inquiry System
   FILE: Index.html
-  VERSION: 3.2
-  DATE: 02-May-2026
+  VERSION: 3.4
+  DATE: 03-May-2026
   
   DESCRIPTION:
   This file serves as the User Interface (UI) for Chleverly's product pages.
   1. It receives product data (SKU, Price, etc.) from PricingMaster.gs via Google Apps Script templates.
   2. It displays a centralized price and a call-to-action "Inquiry & Buy" button.
-  3. It reveals a hidden inquiry form upon clicking the button.
-  4. It sends user-inputted data (Name, Email, Phone) back to PricingMaster.gs to trigger supplier emails.
-  5. It opens the Inquiry Form in a new window.
-  6. Mobile-Stable / 235px Optimized
+  3. It sends user-inputted data (Name, Email, Phone) back to PricingMaster.gs to trigger supplier emails.
+  4. It opens the Inquiry Form in a new window.
+  5. Automated UI for product pricing and inquiry.
+  6. HoneyPot Security (v3.4 update) to prevent bot submissions.
+  7. Prefixed variables (productXX, customerXX) for system consistency.
+  8. Centered layout optimized for 235px (1/2-col) and 160px (3/4-col).
+  9. Mobile-Stable
   
   DEVELOPER NOTE:
   - Elements are centralized using CSS Flexbox.
@@ -29,7 +32,6 @@
         padding: 0 !important;
         width: 100% !important;
         height: 100% !important;
-        /* Absolute suppression of scrollbars for mobile stability */
         overflow: hidden !important; 
         background-color: transparent; 
       }
@@ -40,13 +42,12 @@
         display: flex;
         flex-direction: column;
         align-items: center;
-        /* Vertically centers the price/button within your 235px box */
         justify-content: center; 
         padding: 0 !important;
       }
 
       .price-display { 
-        font-size: 22px; 
+        font-size: 36px; 
         font-family: 'Arial', sans-serif;
         font-weight: bold; 
         color: #333; 
@@ -59,14 +60,16 @@
         font-family: 'Arial', sans-serif;
         font-weight: bold;
         color: #FFF;
-        /* Professional button padding retained */
         padding: 10px 40px !important; 
         border-radius: 6px;
-        margin: 0 !important; 
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
       }
 
-      /* Inquiry Form Styling */
+      /* HoneyPot: Invisible to humans, bait for bots */
+      .hp-container {
+        display: none !important;
+        visibility: hidden;
+      }
+
       #formSection { 
         width: 95%; max-width: 600px; margin: 20px auto; padding: 30px; 
         border: 1px solid #dee2e6; border-radius: 8px; background: #fff; 
@@ -79,18 +82,27 @@
       <? if (mode === 'form') { ?>
         <div id="formSection">
           <h4 class="mb-1 text-center"><strong>Product Inquiry</strong></h4>
-          <h5 class="text-center mb-1"><strong>Product:</strong> <?= product.name ?></h5>
+
+          <p class="text-center mb-1">Product: <strong><?= product.productName ?></strong></p>
+          <p class="text-center mb-1">Color: <strong><?= product.productColor ?></strong></p>
+          <p class="text-muted text-center small mb-4">SKU: <strong><?= product.productSKU ?></strong></p>
+          
+          <!-- HoneyPot Field -->
+          <div class="hp-container">
+            <input type="text" id="customerRobotCheck" value="">
+          </div>
+
           <div class="mb-3">
             <label class="form-label">Full Name</label>
-            <input type="text" id="custName" class="form-control">
+            <input type="text" id="custName" class="form-control" placeholder="John Doe">
           </div>
           <div class="mb-3">
             <label class="form-label">Email Address</label>
-            <input type="email" id="custEmail" class="form-control">
+            <input type="email" id="custEmail" class="form-control" placeholder="name@example.com">
           </div>
           <div class="mb-3">
             <label class="form-label">Mobile Number</label>
-            <input type="text" id="custPhone" class="form-control">
+            <input type="text" id="custPhone" class="form-control" placeholder="+65 1234 5678">
           </div>
           <button id="submitBtn" class="btn btn-primary w-100 py-2" onclick="submitInquiry()">Send Inquiry</button>
           <div id="statusMsg" class="mt-3 text-center small"></div>
@@ -98,7 +110,8 @@
 
       <? } else { ?>
         <div id="main-anchor">
-          <div class="price-display"><?= product.price ?> (inc. GST)</div>
+          <!-- Note: Product is all-inclusive of GST per business rule -->
+          <div class="price-display"><?= product.productPrice ?></div>
           <button class="btn btn-primary btn-inquiry" onclick="openFormTab()">Inquire & Buy</button>
         </div>
       <? } ?>
@@ -106,20 +119,32 @@
       <script>
         function openFormTab() {
           var baseUrl = '<?= scriptUrl ?>';
-          var sku = '<?= product.sku ?>';
+          var sku = '<?= product.productSKU ?>';
           window.open(baseUrl + "?sku=" + sku + "&mode=form", '_blank');
         }
 
         function submitInquiry() {
+          // Security: HoneyPot Check
+          const robotCheck = document.getElementById('customerRobotCheck').value;
+          if (robotCheck !== "") {
+            return; // Exit if bot detected
+          }
+
           const btn = document.getElementById('submitBtn');
           btn.disabled = true; btn.innerHTML = "Sending...";
+          
           const formData = {
-            sku: '<?= product.sku ?>',
-            productName: '<?= product.name ?>',
-            custName: document.getElementById('custName').value,
-            custEmail: document.getElementById('custEmail').value,
-            custPhone: document.getElementById('custPhone').value
+            productSKU: '<?= product.productSKU ?>',
+            productName: '<?= product.productName ?>',
+            productColor: '<?= product.productColor ?>',
+            productGift: '<?= product.productGift ?>',
+            productPrice: '<?= product.productPrice ?>',
+            productSupplierEmail: '<?= product.productSupplierEmail ?>',
+            customerName: document.getElementById('custName').value,
+            customerEmail: document.getElementById('custEmail').value,
+            customerPhone: document.getElementById('custPhone').value
           };
+
           google.script.run
             .withSuccessHandler(() => { 
                btn.innerHTML = "Sent!"; 
